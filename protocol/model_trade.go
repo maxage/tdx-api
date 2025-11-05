@@ -3,9 +3,15 @@ package protocol
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/injoyai/base/types"
 	"github.com/injoyai/conv"
-	"time"
+)
+
+var (
+	// 中国标准时间时区 (UTC+8)
+	locationCST = time.FixedZone("CST", 8*3600)
 )
 
 type TradeResp struct {
@@ -101,7 +107,8 @@ func (trade) Decode(bs []byte, c TradeCache) (*TradeResp, error) {
 	lastPrice := Price(0)
 	for i := uint16(0); i < resp.Count; i++ {
 		timeStr := GetHourMinute([2]byte(bs[:2]))
-		t, err := time.Parse("2006010215:04", c.Date+timeStr)
+		// 数据中的时间本身就是北京时间，使用CST时区解析
+		t, err := time.ParseInLocation("2006010215:04", c.Date+timeStr, locationCST)
 		if err != nil {
 			return nil, err
 		}

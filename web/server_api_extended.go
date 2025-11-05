@@ -112,7 +112,7 @@ func handleBatchQuote(w http.ResponseWriter, r *http.Request) {
 	successResponse(w, quotes)
 }
 
-// 获取历史K线（指定范围）
+// 获取历史K线（指定范围，日/周/月K线使用前复权）
 func handleGetKlineHistory(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	klineType := r.URL.Query().Get("type")
@@ -149,13 +149,37 @@ func handleGetKlineHistory(w http.ResponseWriter, r *http.Request) {
 	case "hour":
 		resp, err = client.GetKlineHour(code, 0, limit)
 	case "week":
-		resp, err = client.GetKlineWeek(code, 0, limit)
+		// 周K线使用前复权
+		resp, err = getQfqKlineDay(code)
+		if err == nil {
+			resp = convertToWeekKline(resp)
+			// 限制返回数量
+			if len(resp.List) > int(limit) {
+				resp.List = resp.List[len(resp.List)-int(limit):]
+				resp.Count = limit
+			}
+		}
 	case "month":
-		resp, err = client.GetKlineMonth(code, 0, limit)
+		// 月K线使用前复权
+		resp, err = getQfqKlineDay(code)
+		if err == nil {
+			resp = convertToMonthKline(resp)
+			// 限制返回数量
+			if len(resp.List) > int(limit) {
+				resp.List = resp.List[len(resp.List)-int(limit):]
+				resp.Count = limit
+			}
+		}
 	case "day":
 		fallthrough
 	default:
-		resp, err = client.GetKlineDay(code, 0, limit)
+		// 日K线使用前复权
+		resp, err = getQfqKlineDay(code)
+		if err == nil && len(resp.List) > int(limit) {
+			// 只返回最近limit条
+			resp.List = resp.List[len(resp.List)-int(limit):]
+			resp.Count = limit
+		}
 	}
 
 	if err != nil {

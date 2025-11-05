@@ -2,8 +2,14 @@ package protocol
 
 import (
 	"errors"
-	"github.com/injoyai/conv"
 	"time"
+
+	"github.com/injoyai/conv"
+)
+
+var (
+	// 中国标准时间时区 (UTC+8) - 用于历史分时成交
+	locationCSTHistory = time.FixedZone("CST", 8*3600)
 )
 
 // HistoryTradeResp 兼容之前的版本
@@ -48,7 +54,8 @@ func (historyTrade) Decode(bs []byte, c TradeCache) (*TradeResp, error) {
 	lastPrice := Price(0)
 	for i := uint16(0); i < resp.Count; i++ {
 		timeStr := GetHourMinute([2]byte(bs[:2]))
-		t, err := time.Parse("2006010215:04", c.Date+timeStr)
+		// 数据中的时间本身就是北京时间，使用CST时区解析
+		t, err := time.ParseInLocation("2006010215:04", c.Date+timeStr, locationCSTHistory)
 		if err != nil {
 			return nil, err
 		}
