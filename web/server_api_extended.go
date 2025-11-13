@@ -783,21 +783,8 @@ func handleGetWorkday(w http.ResponseWriter, r *http.Request) {
 	if dateParam != "" {
 		parsed, err := parseWorkdayDate(dateParam)
 		if err != nil {
-			errorResponse(w, "date 参数格式错误，应为 YYYYMMDD 或 YYYY-MM-DD")
+			errorResponse(w, "date 参数格式错误，应为 YYYYMMDD 或 YYYY-MM-DD: "+err.Error())
 			return
-			continue
-		}
-		lastPrice := model.LastPrice
-		switch strings.ToLower(model.Exchange) {
-		case "sh":
-			stats.SH.Total++
-			classifyPrice(lastPrice, &stats.SH.Up, &stats.SH.Down, &stats.SH.Flat)
-		case "sz":
-			stats.SZ.Total++
-			classifyPrice(lastPrice, &stats.SZ.Up, &stats.SZ.Down, &stats.SZ.Flat)
-		case "bj":
-			stats.BJ.Total++
-			classifyPrice(lastPrice, &stats.BJ.Up, &stats.BJ.Down, &stats.BJ.Flat)
 		}
 		target = parsed
 	}
@@ -1304,10 +1291,5 @@ func fetchIndexAll(code, klineType string) ([]*protocol.Kline, error) {
 			return nil, err
 		}
 		return resp.List, nil
-		*up++
-	case price < 0:
-		*down++
-	default:
-		*flat++
 	}
 }

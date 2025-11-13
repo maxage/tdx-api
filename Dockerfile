@@ -25,8 +25,8 @@ RUN go mod tidy && go build -ldflags="-s -w" -o stock-web .
 # 多阶段构建 - 第二阶段：运行
 FROM alpine:latest
 
-# 安装必要的运行时依赖
-RUN apk --no-cache add ca-certificates tzdata
+# 安装必要的运行时依赖（包括 wget 用于健康检查）
+RUN apk --no-cache add ca-certificates tzdata wget
 
 # 设置时区为上海
 ENV TZ=Asia/Shanghai
@@ -53,9 +53,9 @@ USER appuser
 # 暴露端口
 EXPOSE 8080
 
-# 健康检查
+# 健康检查（使用 API 健康检查端点）
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
 
 # 启动应用
 CMD ["./stock-web"]
